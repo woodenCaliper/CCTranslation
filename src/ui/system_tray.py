@@ -289,12 +289,11 @@ Windows 常駐型翻訳アプリケーション
             print(f"ツールチップ更新エラー: {e}")
 
     def show_notification(self, title: str, message: str, duration: float = 3.0):
-        """通知を表示"""
+        """通知を表示（Windows通知機能は無効化）"""
         try:
-            if self.icon:
-                # pystrayの通知機能（Windowsの場合）
-                self.icon.notify(message, title)
-                print(f"通知を表示しました: {title} - {message}")
+            # Windows通知機能は無効化（requirements.mdの制約事項に従う）
+            # 代わりにコンソールログのみ出力
+            print(f"通知: {title} - {message}")
         except Exception as e:
             print(f"通知表示エラー: {e}")
 
