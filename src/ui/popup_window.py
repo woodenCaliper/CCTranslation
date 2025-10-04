@@ -19,6 +19,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.translation_manager import TranslationManager, TranslationStatus, TranslationResult
 from core.clipboard_manager import ClipboardManager
 from data.language import LanguageManager
+from utils.display_manager import DisplayManager
 
 
 class PopupState(Enum):
@@ -68,6 +69,9 @@ class PopupWindow:
         # 翻訳・クリップボード管理
         self.translation_manager = TranslationManager()
         self.clipboard_manager = ClipboardManager()
+
+        # ディスプレイ管理
+        self.display_manager = DisplayManager()
 
         # ポップアップ状態
         self.state = PopupState.HIDDEN
@@ -161,9 +165,11 @@ class PopupWindow:
                 self._position_window()
                 self._show_window()
             else:
-                # 既存ポップアップを更新
+                # 既存ポップアップを更新（マウス位置に移動）
                 self.state = PopupState.TRANSLATION_DISPLAY
                 self._update_translation_display(result)
+                self._position_window()  # マウス位置に移動
+                self._show_window()  # フォーカスを当てる
 
             # 自動閉じるタイマーは開始しない（ユーザーが手動で閉じるまで表示し続ける）
             # self._start_auto_close_timer()
@@ -239,6 +245,9 @@ class PopupWindow:
 
         # ウィンドウプロトコル設定
         self.window.protocol("WM_DELETE_WINDOW", self._on_window_close)
+
+        # エスケープキーでウィンドウを閉じる機能を追加
+        self.window.bind('<Escape>', lambda event: self.hide_popup())
 
         # スタイル設定
         self.window.configure(bg="#f8f9fa")
@@ -494,18 +503,32 @@ class PopupWindow:
             self._show_window()
 
     def _position_window(self):
-        """ウィンドウの位置を設定"""
+        """ウィンドウの位置を設定（マウス位置に表示）"""
         if not self.window:
             return
 
-        # 画面の中央に配置
-        screen_width = self.window.winfo_screenwidth()
-        screen_height = self.window.winfo_screenheight()
+        try:
+            # マウス位置を取得
+            mouse_x, mouse_y = self.display_manager.get_mouse_position()
 
-        x = (screen_width - self.config.width) // 2 + self.config.offset_x
-        y = (screen_height - self.config.height) // 2 + self.config.offset_y
+            # ポップアップの最適な位置を計算
+            popup_x, popup_y = self.display_manager.calculate_popup_position(
+                self.config.width, self.config.height, mouse_x, mouse_y
+            )
 
-        self.window.geometry(f"{self.config.width}x{self.config.height}+{x}+{y}")
+            # ウィンドウ位置を設定
+            self.window.geometry(f"{self.config.width}x{self.config.height}+{popup_x}+{popup_y}")
+
+            print(f"ポップアップ位置設定: マウス({mouse_x}, {mouse_y}) -> ウィンドウ({popup_x}, {popup_y})")
+
+        except Exception as e:
+            print(f"マウス位置表示エラー: {e}")
+            # フォールバック: 画面中央に表示
+            screen_width = self.window.winfo_screenwidth()
+            screen_height = self.window.winfo_screenheight()
+            x = (screen_width - self.config.width) // 2 + self.config.offset_x
+            y = (screen_height - self.config.height) // 2 + self.config.offset_y
+            self.window.geometry(f"{self.config.width}x{self.config.height}+{x}+{y}")
 
     def _show_window(self):
         """ウィンドウを表示"""
