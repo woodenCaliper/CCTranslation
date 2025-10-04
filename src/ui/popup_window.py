@@ -37,7 +37,7 @@ class PopupConfig:
     width: int = 500
     height: int = 700
     min_width: int = 400
-    min_height: int = 600
+    min_height: int = 250
 
     # タイムアウト設定
     status_timeout: float = 3.0  # ステータス表示タイムアウト
@@ -236,7 +236,7 @@ class PopupWindow:
         self.window = tk.Toplevel()
         self.window.title("CCTranslation")
         self.window.geometry(f"{self.config.width}x{self.config.height}")
-        self.window.minsize(self.config.min_width, self.config.min_height)
+        self.window.minsize(self.config.min_width, 1)  # 高さの最小制限を無効化
 
 
         # ウィンドウの設定
@@ -343,8 +343,9 @@ class PopupWindow:
         source_header.pack(fill=tk.X, padx=10, pady=(8, 0))
         source_header.pack_propagate(False)
 
-        # 展開/縮小状態を管理
-        source_expanded = tk.BooleanVar(value=True)  # デフォルトは展開状態
+        # 展開/縮小状態を管理（クラス変数として保存）
+        self.source_expanded = tk.BooleanVar(value=True)  # デフォルトは展開状態
+        source_expanded = self.source_expanded  # ローカル変数としても使用
 
 
         # ヘッダーラベル（クリック可能）
@@ -384,7 +385,7 @@ class PopupWindow:
                 source_frame.configure(height=400)
 
                 # 原文エリアの最小サイズ制限を復元（展開時は制限あり）
-                min_source_pane_height = max(80, self.config.min_height // 8)
+                min_source_pane_height = 40  # 1行分（requirements.md仕様）
                 paned_window.paneconfig(source_frame, minsize=min_source_pane_height)
 
                 # 分割バーを中央に戻す
@@ -485,10 +486,10 @@ class PopupWindow:
         paned_window.add(result_frame)
 
         # 各ペインの最小サイズを設定（requirements.mdの仕様に準拠）
-        # 原文エリア：動的計算（展開時のみ適用）
-        min_source_pane_height = max(80, self.config.min_height // 8)
+        # 原文エリア：1行分の高さ（requirements.md仕様）
+        min_source_pane_height = 40  # 1行分（requirements.md仕様）
         # 翻訳結果エリア：1行分の高さ（requirements.md仕様）
-        min_result_pane_height = 40  # テキスト1行分の高さ（フォントサイズ + パディング + 安全マージン）
+        min_result_pane_height = 40  # 1行分（requirements.md仕様）
 
         paned_window.paneconfig(source_frame, minsize=min_source_pane_height)  # 原文エリア最小高さ
         paned_window.paneconfig(result_frame, minsize=min_result_pane_height)  # 翻訳結果エリア最小高さ（1行）
@@ -496,29 +497,43 @@ class PopupWindow:
         # 分割バーの初期位置を設定（中央）
         paned_window.after(100, lambda: self._set_paned_window_sash_position(paned_window))
 
-        # ボタンフレーム（最小高さを保証）- ウィンドウに直接配置
-        button_frame = tk.Frame(self.window, bg="red", height=60)  # デバッグ用に赤色
+        # ボタンフレーム（動的高さ計算）- ウィンドウに直接配置
+        button_frame = tk.Frame(self.window, bg="red")
         button_frame.pack(fill=tk.X, side=tk.BOTTOM, padx=20)
         button_frame.pack_propagate(False)  # 子ウィジェットのサイズに依存しない
 
-        # コピーボタン（中央配置）
+        # コピーボタン（中央配置、最小サイズ）
         copy_button = tk.Button(
             button_frame,
             text="結果をコピー",
-            font=self.default_font,
+            font=self.default_font,  # 10ptに戻す
             command=lambda: self._copy_result(result.translated_text),
             bg="orange",
             fg="white",
             activebackground="darkorange",
             activeforeground="white",
             relief=tk.SOLID,
-            borderwidth=2,
+            borderwidth=1,  # 枠線を1pxに削減
             highlightcolor="green",
-            highlightthickness=2,
-            padx=5,  # 左右パディング5px（requirements.md仕様）
-            pady=3   # 上下パディング3px（requirements.md仕様）
+            highlightthickness=1,  # ハイライト枠線を1pxに削減
+            padx=2,  # 左右パディングを最小限に削減
+            pady=1   # 上下パディングを最小限に削減
         )
         copy_button.pack(expand=True)  # 中央配置（requirements.md仕様）
+
+        # ボタンの高さを取得してframeの高さを動的に設定
+        def adjust_button_frame_height():
+            try:
+                copy_button.update_idletasks()  # ボタンの描画を完了させる
+                button_height = copy_button.winfo_reqheight()  # ボタンの要求高さを取得
+                frame_height = button_height + 6  # ボタン高さ + 6px
+                button_frame.configure(height=frame_height)
+                print(f"[DEBUG] ボタン高さ: {button_height}px, Frame高さ: {frame_height}px")
+            except Exception as e:
+                print(f"[DEBUG] ボタン高さ取得エラー: {e}")
+
+        # ボタンが描画された後に高さを調整
+        button_frame.after(100, adjust_button_frame_height)
 
     def _set_paned_window_sash_position(self, paned_window):
         """PanedWindowの分割バーの初期位置を設定（高さ均等化）"""
@@ -553,7 +568,7 @@ class PopupWindow:
                 print(f"[DEBUG] ウィンドウリサイズ処理エラー: {e}")
 
     def _adjust_layout_on_resize(self):
-        """リサイズ時のレイアウト調整（高さ均等化）"""
+        """リサイズ時のレイアウト調整（原文縮小状態を考慮）"""
         try:
             if not self.window or not self.window.winfo_exists():
                 return
@@ -564,14 +579,25 @@ class PopupWindow:
             # PanedWindowを検索して高さ調整
             for widget in self.window.winfo_children():
                 if isinstance(widget, tk.PanedWindow):
-                    # ボタンエリア（60px）+ パディング（40px）+ 安全マージン（20px）= 120px
-                    available_height = max(300, window_height - 120)
-                    widget.configure(height=available_height)
+                    # 原文縮小状態を確認
+                    is_collapsed = not self.source_expanded.get()
 
-                    # requirements.mdの仕様：高さを均等化
-                    center_pos = available_height // 2
-                    widget.sash_place(0, 0, center_pos)
-                    print(f"[DEBUG] リサイズ時高さ均等化: PanedWindow高さ={available_height}, 分割バー位置={center_pos}")
+                    if is_collapsed:
+                        # 縮小状態：source_frameの高さを強制的に35pxに維持
+                        source_frame = widget.panes()[0] if len(widget.panes()) > 0 else None
+                        if source_frame:
+                            source_frame.configure(height=35)
+                            # 分割バーをヘッダー直下（35px）に配置
+                            widget.sash_place(0, 0, 35)
+                            print(f"[DEBUG] リサイズ時縮小状態維持: source_frame高さ=35px")
+                    else:
+                        # 展開状態：通常の高さ調整
+                        available_height = max(300, window_height - 120)
+                        widget.configure(height=available_height)
+                        # requirements.mdの仕様：高さを均等化
+                        center_pos = available_height // 2
+                        widget.sash_place(0, 0, center_pos)
+                        print(f"[DEBUG] リサイズ時展開状態: PanedWindow高さ={available_height}, 分割バー位置={center_pos}")
                     break
         except Exception as e:
             print(f"[DEBUG] レイアウト調整エラー: {e}")
