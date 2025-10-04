@@ -206,7 +206,7 @@ CCTranslation/
 - SystemTrayManagerクラス実装
 - pystrayを使用したトレイアイコン表示
 - CCT_icon.icoの読み込み
-- 右クリックメニュー（設定、履歴、Exit）
+- 右クリックメニュー（設定、Exit）
 
 **成果物**:
 - `src/core/system_tray.py`
@@ -276,18 +276,6 @@ CCTranslation/
 **成果物**:
 - `src/ui/settings_window.py`
 
-#### Task 2.2.2: 翻訳履歴機能
-**優先度**: 低 | **工数**: 2日 | **依存**: 2.2.1
-
-**作業内容**:
-- HistoryManagerクラス実装
-- 翻訳履歴の保存・読み込み
-- 履歴表示画面
-- 履歴検索・フィルタ機能
-
-**成果物**:
-- `src/data/history.py`
-- 履歴表示UI
 
 ---
 

@@ -63,7 +63,6 @@ CCTranslation/
 │   ├── data/
 │   │   ├── __init__.py
 │   │   ├── config.py          # 設定管理
-│   │   ├── history.py         # 履歴管理
 │   │   └── language.py        # 言語データ管理
 │   └── utils/
 │       ├── __init__.py
@@ -74,7 +73,6 @@ CCTranslation/
 │   └── CCT_icon.ico           # システムトレイアイコン
 ├── data/
 │   ├── config.ini             # 設定ファイル
-│   ├── history.json           # 翻訳履歴
 │   └── languages.json         # 言語データ
 ├── requirements.txt           # 依存関係
 └── README.md                  # プロジェクト説明
@@ -89,7 +87,6 @@ class CCTranslationApp:
     
     def __init__(self):
         self.config_manager = ConfigManager()
-        self.history_manager = HistoryManager()
         self.language_manager = LanguageManager()
         self.translation_manager = TranslationManager()
         self.clipboard_manager = ClipboardManager()
@@ -234,7 +231,6 @@ class HotkeyManager:
     ↓
 翻訳完了時に結果更新
     ↓
-履歴保存 (JSON)
 ```
 
 ### 3.1.1 タイムアウト処理詳細
@@ -415,25 +411,8 @@ show_tray_icon = true
 tooltip = CCTranslation - 翻訳ユーティリティ
 ```
 
-### 5.2 履歴ファイル構造 (history.json)
-```json
-{
-  "version": "1.0.0",
-  "history": [
-    {
-      "id": "uuid-string",
-      "timestamp": "2024-01-01T12:00:00Z",
-      "source_text": "Hello, how are you?",
-      "target_text": "こんにちは、お元気ですか？",
-      "source_language": "en",
-      "target_language": "ja",
-      "detected_language": "en"
-    }
-  ]
-}
-```
 
-### 5.3 言語データ構造 (languages.json)
+### 5.2 言語データ構造 (languages.json)
 ```json
 {
   "languages": {

@@ -79,8 +79,7 @@ class ConfigManager:
 
         self.config['Advanced'] = {
             'enable_logging': 'true',
-            'log_level': 'INFO',
-            'max_history_count': '100'
+            'log_level': 'INFO'
         }
 
     def save_config(self) -> None:
@@ -236,9 +235,6 @@ class ConfigManager:
         """ログレベルの取得"""
         return self.get('Advanced', 'log_level', 'INFO')
 
-    def get_max_history_count(self) -> int:
-        """最大履歴数の取得"""
-        return self.get_int('Advanced', 'max_history_count', 100)
 
     # 設定値の更新メソッド
     def set_default_target_language(self, language: str) -> None:
