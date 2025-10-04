@@ -1,0 +1,23 @@
+# CCTranslation Development Dependencies
+# 開発・テスト用の依存関係
+
+# 本番環境の依存関係を含める
+-r requirements.txt
+
+# テストフレームワーク
+pytest==7.4.2
+pytest-cov==4.1.0
+
+# コード品質
+flake8==6.1.0
+black==23.9.1
+mypy==1.5.1
+
+# ドキュメント生成
+sphinx==7.1.2
+
+# パッケージング（実行ファイル作成）
+PyInstaller==6.1.0
+
+# 開発支援ツール
+pre-commit==3.4.0
