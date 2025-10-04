@@ -13,6 +13,12 @@ import logging
 from typing import Optional, Dict, Any
 from pathlib import Path
 
+# Windowsでのエンコーディング問題を修正
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 # プロジェクトルートをパスに追加
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -98,7 +104,7 @@ class CCTranslationApp:
                 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                 handlers=[
                     logging.FileHandler(log_file, encoding='utf-8'),
-                    logging.StreamHandler(sys.stdout)
+                    logging.StreamHandler(sys.stdout, encoding='utf-8')
                 ]
             )
 
@@ -559,6 +565,7 @@ def main():
                 # メインウィンドウがない場合は通常のループ
                 while app.is_running:
                     time.sleep(1)
+
         except KeyboardInterrupt:
             print("\nキーボード割り込みで終了します")
 
