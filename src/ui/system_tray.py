@@ -112,10 +112,6 @@ class SystemTrayManager:
             Item(
                 "CCTranslation",
                 menu(
-                    Item("メインウィンドウを表示", self._show_main_window),
-                    Item("設定", self._show_settings),
-                    Item("言語設定", self._show_language_settings),
-                    menu.SEPARATOR,
                     Item("バージョン情報", self._show_version_info)
                 )
             ),
