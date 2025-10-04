@@ -15,7 +15,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │  Presentation Layer (UI Layer)                              │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │
-│  │   Main Window   │  │  Settings UI    │  │ System Tray │  │
+│  │ Popup Window    │  │  Settings UI    │  │ System Tray │  │
 │  │   (tkinter)     │  │   (tkinter)     │  │  (pystray)  │  │
 │  └─────────────────┘  └─────────────────┘  └─────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
@@ -281,49 +281,40 @@ ConfigManager更新
 
 ## 4. UI/UXコンポーネント設計
 
-### 4.1 メインウィンドウコンポーネント
+### 4.1 ポップアップウィンドウコンポーネント
 ```python
-class MainWindow:
-    """メインウィンドウクラス"""
+class PopupWindow:
+    """ポップアップウィンドウクラス"""
     
-    def __init__(self, app: CCTranslationApp):
-        self.app = app
-        self.root = tk.Tk()
-        self.status_frame = None  # ステータス表示フレーム
-        self.setup_ui()
+    def __init__(self, config_manager, language_manager):
+        self.config_manager = config_manager
+        self.language_manager = language_manager
+        self.window = None
+        self.setup_popup()
     
-    def setup_ui(self):
-        """UIコンポーネントのセットアップ"""
-        # ウィンドウ設定
-        # 言語選択コンポーネント
-        # 分割パネルコンポーネント
-        # テキストエリアコンポーネント
-        # ステータス表示フレーム
-        # コピーボタン
+    def setup_popup(self):
+        """ポップアップウィンドウのセットアップ"""
+        # ウィンドウ設定（Toplevel）
+        # 翻訳前テキストエリア（クリップボードから取得）
+        # 翻訳後テキストエリア（翻訳結果表示）
+        # 分割バー（PanedWindow）
+        # コピーボタン、閉じるボタン
         pass
     
-    def update_translation(self, result: TranslationResult):
-        """翻訳結果の表示更新"""
+    def show_translation_popup(self, result: TranslationResult):
+        """翻訳結果をポップアップで表示"""
         pass
     
-    def show_status_window(self):
-        """3秒タイムアウト時のステータスウィンドウ表示"""
+    def show_status_popup(self, message: str):
+        """翻訳中ステータスをポップアップで表示"""
         pass
     
-    def update_status(self, status: str, message: str = ""):
-        """ステータス表示更新"""
-        # status: "translating", "connecting", "error"
-        # message: 詳細メッセージ
+    def hide_popup(self):
+        """ポップアップを非表示"""
         pass
     
-    def switch_to_translation_display(self, result: TranslationResult):
-        """ステータス表示から通常の翻訳結果表示に切り替え"""
-        # ステータスウィンドウの内容を翻訳結果表示に変更
-        # 原文エリア、翻訳文エリア、言語情報、コピーボタンを表示
-        pass
-    
-    def hide_status(self):
-        """ステータス表示を非表示"""
+    def _set_paned_window_sash_position(self, paned_window):
+        """分割バーの初期位置を設定"""
         pass
 ```
 
