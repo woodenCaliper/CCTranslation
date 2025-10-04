@@ -358,7 +358,6 @@ class PopupWindow:
 
         source_text = scrolledtext.ScrolledText(
             source_frame,
-            height=4,
             wrap=tk.WORD,
             font=self.source_font,
             bg="#ffffff",
@@ -366,7 +365,7 @@ class PopupWindow:
             relief=tk.FLAT,
             borderwidth=1
         )
-        source_text.pack(fill=tk.BOTH, padx=5, pady=5)
+        source_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         source_text.insert("1.0", result.source_text)
         source_text.config(state=tk.DISABLED)
 
@@ -381,7 +380,6 @@ class PopupWindow:
 
         result_text = scrolledtext.ScrolledText(
             result_frame,
-            height=6,
             wrap=tk.WORD,
             font=self.result_font,
             bg="#ffffff",
@@ -389,7 +387,7 @@ class PopupWindow:
             relief=tk.FLAT,
             borderwidth=1
         )
-        result_text.pack(fill=tk.BOTH, padx=5, pady=5)
+        result_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         result_text.insert("1.0", result.translated_text)
 
         # 翻訳結果テキストエリアを編集不可にする（選択とコピーは可能）
