@@ -501,33 +501,24 @@ class PopupWindow:
         button_frame.pack(fill=tk.X, side=tk.BOTTOM, padx=20)
         button_frame.pack_propagate(False)  # 子ウィジェットのサイズに依存しない
 
-        # コピーボタン
+        # コピーボタン（中央配置）
         copy_button = tk.Button(
             button_frame,
             text="結果をコピー",
             font=self.default_font,
             command=lambda: self._copy_result(result.translated_text),
-            bg="#007bff",
+            bg="orange",
             fg="white",
-            relief=tk.FLAT,
-            padx=15,
-            pady=5
+            activebackground="darkorange",
+            activeforeground="white",
+            relief=tk.SOLID,
+            borderwidth=2,
+            highlightcolor="green",
+            highlightthickness=2,
+            padx=5,  # 左右パディング5px（requirements.md仕様）
+            pady=3   # 上下パディング3px（requirements.md仕様）
         )
-        copy_button.pack(side=tk.LEFT, padx=(0, 10))
-
-        # 閉じるボタン
-        close_button = tk.Button(
-            button_frame,
-            text="閉じる",
-            font=self.default_font,
-            command=self.hide_popup,
-            bg="#6c757d",
-            fg="white",
-            relief=tk.FLAT,
-            padx=15,
-            pady=5
-        )
-        close_button.pack(side=tk.RIGHT)
+        copy_button.pack(expand=True)  # 中央配置（requirements.md仕様）
 
     def _set_paned_window_sash_position(self, paned_window):
         """PanedWindowの分割バーの初期位置を設定（高さ均等化）"""
@@ -629,20 +620,6 @@ class PopupWindow:
         # ボタンフレーム
         button_frame = tk.Frame(main_frame, bg="#f8f9fa")
         button_frame.pack(fill=tk.X)
-
-        # 閉じるボタン
-        close_button = tk.Button(
-            button_frame,
-            text="閉じる",
-            font=self.default_font,
-            command=self.hide_popup,
-            bg="#dc3545",
-            fg="white",
-            relief=tk.FLAT,
-            padx=15,
-            pady=5
-        )
-        close_button.pack(side=tk.RIGHT)
 
     def _update_status_message(self, message: str):
         """ステータスメッセージの更新"""

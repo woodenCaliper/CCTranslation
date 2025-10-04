@@ -76,12 +76,12 @@ Windows デスクトップアプリケーション（常駐型）
 ### 3.2 システム構成
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   ユーザー操作    │    │   CCTranslation  │    │  Google翻訳API  │
+│   ユーザー操作   │    │   CCTranslation │    │  Google翻訳API  │
 │                 │    │                 │    │                 │
-│ Ctrl+C (連続)   │───▶│ クリップボード監視 │    │                 │
+│ Ctrl+C (連続)   │───▶│ クリップボード監視│   │                 │
 │                 │    │ ホットキー検出   │    │                 │
 └─────────────────┘    │ ポップアップ表示 │◀───│ 翻訳処理        │
-                       │ 設定管理        │    │                 │
+                       │ 設定管理        │     │                 │
                        └─────────────────┘    └─────────────────┘
 ```
 
@@ -174,9 +174,62 @@ Windows デスクトップアプリケーション（常駐型）
 │ │                                       │ │
 │ └───────────────────────────────────────┘ │ ← 翻訳後テキストエリア（ここまで）
 ├───────────────────────────────────────────┤
-│         [結果をコピー] [閉じる]             │ ← ボタンエリア(1行)
+│              [結果をコピー]                │ ← ボタンエリア(1行)
 └───────────────────────────────────────────┘
 ```
+
+**CSSフレーム構造（展開状態）**:
+```
+window (Toplevel)
+├── paned_window (tk.PanedWindow, orient='vertical')
+│   ├── source_frame (tk.Frame, bg="green", pack_propagate=False)
+│   │   ├── source_header (tk.Frame, bg="#f8f9fa", height=35, pack_propagate=False)
+│   │   │   └── source_label (tk.Label, text="▼ 原文 (en)", cursor="hand2", anchor="w")
+│   │   └── source_text_frame (tk.Frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
+│   │       └── source_text (scrolledtext.ScrolledText, state=tk.DISABLED, relief=tk.FLAT, borderwidth=0)
+│   └── result_frame (tk.Frame, bg="yellow", relief=tk.FLAT)
+│       ├── result_header (tk.Frame, bg="#f8f9fa", height=35, pack_propagate=False)
+│       │   └── result_label (tk.Label, text="翻訳結果 (ja)", anchor="w")
+│       └── result_text_frame (tk.Frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
+│           └── result_text (scrolledtext.ScrolledText, state=tk.DISABLED, relief=tk.FLAT, borderwidth=0)
+└── button_frame (tk.Frame, bg="red", height=60, pack_propagate=False)
+    └── copy_button (tk.Button, bg="orange", relief=tk.SOLID, borderwidth=2, highlightcolor="green")
+```
+
+**フレーム詳細仕様**:
+- **paned_window**: 
+  - sashwidth=0, sashrelief=tk.FLAT (分割バードラッグ無効)
+  - 高さ: window_height - 120px (動的計算)
+  - 分割バー位置: 中央 (height // 2)
+- **source_frame**: 
+  - 背景色: 緑色 (デバッグ用)
+  - pack_propagate=False (高さ制御)
+  - 最小高さ: 80px (展開時)
+- **source_header**: 
+  - 背景色: #f8f9fa
+  - 固定高さ: 35px
+- **source_text_frame**: 
+  - 背景色: #ffffff
+  - relief=tk.SUNKEN, bd=1 (境界線)
+- **result_frame**: 
+  - 背景色: 黄色 (デバッグ用)
+  - 最小高さ: 40px (1行分)
+- **result_header**: 
+  - 背景色: #f8f9fa
+  - 固定高さ: 35px
+- **result_text_frame**: 
+  - 背景色: #ffffff
+  - relief=tk.SUNKEN, bd=1 (境界線)
+- **button_frame**: 
+  - 背景色: 赤色 (デバッグ用)
+  - 固定高さ: 60px
+  - pack_propagate=False
+- **コピーボタン仕様**:
+  - 背景色: オレンジ
+  - relief=tk.SOLID, borderwidth=2
+  - highlightcolor="green", highlightthickness=2
+  - padx=5, pady=3
+  - 配置: ウィンドウ左右中央
 
 **原文エリア縮小状態**:
 ```
@@ -191,7 +244,7 @@ Windows デスクトップアプリケーション（常駐型）
 │ │                                       │ │
 │ └───────────────────────────────────────┘ │ ← 翻訳後テキストエリア（ここまで）
 ├───────────────────────────────────────────┤
-│         [結果をコピー] [閉じる]             │ ← ボタンエリア(1行)
+│              [結果をコピー]                │ ← ボタンエリア(1行)
 └───────────────────────────────────────────┘
 ```
 
@@ -221,7 +274,10 @@ Windows デスクトップアプリケーション（常駐型）
   - **折り返し**: テキストの自動折り返し（改行なしテキスト対応）
   - **フォント**: Google翻訳と同様のフォント（Noto Sans JP / Roboto）
 - **ボタンエリア表示**: 
-  - ウィンドウサイズがどの状態であれ、ボタンエリア（結果をコピー、閉じる）は必ず表示される
+  - ボタンの文字は10ptとする
+  - ボタン自体のサイズは、上下パディングが3px、左右パディングが5pxとする
+  - ウィンドウサイズがどの状態であれ、ボタンエリア（結果をコピー）は必ず表示される
+  - 結果をコピーボタンはウィンドウの左右中央に配置される
   - ボタンの下の行はウィンドウの下面の枠となる
 
 - **ウィンドウサイズ**: 
@@ -241,9 +297,6 @@ Windows デスクトップアプリケーション（常駐型）
 - **縮小方法**: 
   - ▼ 原文 (en)をクリックすると、原文テキストエリアを非表示にします。原文テキストエリアの高さをゼロにして、その下にある項目の位置を非表示にした分だけ上に移動させる。
   - この時、原文テキストエリアは非表示になり、翻訳結果エリアが利用可能な全スペースを使用する。
-
-
-
 
 
 **システムトレイ仕様**:
