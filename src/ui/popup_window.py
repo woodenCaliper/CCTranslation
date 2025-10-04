@@ -315,7 +315,7 @@ class PopupWindow:
         """翻訳結果表示の設定"""
         # メインフレーム
         main_frame = tk.Frame(self.window, bg="#f8f9fa")
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(5, 20))
 
 
         # 分割パネル（PanedWindow）を作成
@@ -354,6 +354,9 @@ class PopupWindow:
                 source_text_frame.pack_forget()  # テキストボックス部分全体を非表示
                 # 最小高さを設定
                 source_frame.configure(height=45)
+
+                # 分割バーを上に移動（原文エリアが無くなった分）
+                paned_window.after(100, lambda: adjust_sash_for_collapsed())
             else:
                 # 展開状態に切り替え
                 source_expanded.set(True)
@@ -361,6 +364,35 @@ class PopupWindow:
                 source_text_frame.pack(fill=tk.BOTH, padx=10, pady=(0, 8))  # テキストボックス部分を表示
                 # 高さ制限を解除
                 source_frame.configure(height=400)
+
+                # 分割バーを中央に戻す
+                paned_window.after(100, lambda: adjust_sash_for_expanded())
+
+        def adjust_sash_for_collapsed():
+            """縮小時の分割バー位置調整"""
+            try:
+                paned_window.update_idletasks()
+                height = paned_window.winfo_height()
+                if height > 1:
+                    # 縮小時は分割バーを上に移動（翻訳結果エリアがより多くのスペースを使用）
+                    new_pos = height // 8  # 上部1/8の位置に設定
+                    paned_window.sashpos(0, new_pos)
+                    print(f"[DEBUG] 縮小時分割バー位置調整: {new_pos}")
+            except Exception as e:
+                print(f"[DEBUG] 縮小時分割バー調整エラー: {e}")
+
+        def adjust_sash_for_expanded():
+            """展開時の分割バー位置調整"""
+            try:
+                paned_window.update_idletasks()
+                height = paned_window.winfo_height()
+                if height > 1:
+                    # 展開時は分割バーを中央に配置
+                    new_pos = height // 2
+                    paned_window.sashpos(0, new_pos)
+                    print(f"[DEBUG] 展開時分割バー位置調整: {new_pos}")
+            except Exception as e:
+                print(f"[DEBUG] 展開時分割バー調整エラー: {e}")
 
         source_label.bind("<Button-1>", lambda e: toggle_source_expansion())
         source_header.bind("<Button-1>", lambda e: toggle_source_expansion())
