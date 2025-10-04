@@ -26,6 +26,7 @@ from src.ui.popup_window import PopupWindow
 from src.ui.main_window import MainWindow
 from src.ui.system_tray import SystemTrayApp
 from src.utils.exceptions import CCTranslationException, TranslationError, ClipboardError, HotkeyError
+from src.utils.single_instance import SingleInstanceManager
 
 
 class CCTranslationApp:
@@ -62,6 +63,22 @@ class CCTranslationApp:
 
         # ログ設定
         self._setup_logging()
+
+        # 多重起動防止チェック
+        self.single_instance_manager = SingleInstanceManager("CCTranslation")
+        print(f"多重起動防止チェック開始...")
+        if self.single_instance_manager.check_and_exit_if_running():
+            print(f"既存インスタンス検出 - 終了します")
+            sys.exit(1)  # 既存インスタンスが存在する場合は終了
+        print(f"多重起動防止チェック完了 - 続行します")
+
+        # ロックファイル作成確認
+        if hasattr(self.single_instance_manager, 'acquire_lock'):
+            if self.single_instance_manager.acquire_lock():
+                print(f"ロックファイル作成成功: {self.single_instance_manager.lock_file_path}")
+            else:
+                print(f"ロックファイル作成失敗")
+                sys.exit(1)
 
         print("CCTranslation アプリケーション初期化開始")
 
@@ -295,6 +312,10 @@ class CCTranslationApp:
             # 設定保存
             self._save_settings()
 
+            # 単一インスタンスロック解放
+            if hasattr(self, 'single_instance_manager'):
+                self.single_instance_manager.release_lock()
+
             self.is_running = False
             self.logger.info("アプリケーション停止完了")
 
@@ -361,15 +382,7 @@ class CCTranslationApp:
         try:
             self.is_translating = True
 
-            # ステータスポップアップ表示（メインスレッドで実行）
-            if self.popup_window:
-                # Tkinterのメインループが動作している場合のみ表示
-                try:
-                    self.popup_window.root.after(0, lambda: self.popup_window.show_status_popup("翻訳中...", self.settings['translation_timeout']))
-                except Exception as e:
-                    self.logger.warning(f"ステータスポップアップ表示エラー: {e}")
-
-            # システムトレイ通知
+            # システムトレイ通知のみ（ポップアップは翻訳完了時のみ表示）
             if self.system_tray:
                 self.system_tray.system_tray.show_notification(
                     "翻訳開始",
@@ -403,9 +416,7 @@ class CCTranslationApp:
             message = status_messages.get(status, "不明")
             self.logger.info(f"翻訳状態変更: {message}")
 
-            # ステータスポップアップの更新
-            if self.popup_window and status == TranslationStatus.TRANSLATING:
-                self.popup_window._update_status_message(message)
+            # ログ出力のみ（ポップアップは翻訳完了時のみ表示）
 
         except Exception as e:
             self.logger.error(f"翻訳状態変更処理エラー: {e}")

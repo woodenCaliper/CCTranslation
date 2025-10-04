@@ -22,6 +22,9 @@ requests==2.31.0
 # Image processing (for system tray icons)
 Pillow==10.0.1
 
+# Process management (for single instance check)
+psutil==5.9.5
+
 # Config file management (standard library, no need to specify)
 # configparser - Python standard library
 

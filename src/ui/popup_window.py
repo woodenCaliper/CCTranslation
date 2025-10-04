@@ -165,8 +165,8 @@ class PopupWindow:
                 self.state = PopupState.TRANSLATION_DISPLAY
                 self._update_translation_display(result)
 
-            # 自動閉じるタイマー開始
-            self._start_auto_close_timer()
+            # 自動閉じるタイマーは開始しない（ユーザーが手動で閉じるまで表示し続ける）
+            # self._start_auto_close_timer()
 
             # 翻訳完了コールバック
             if self._on_translation_complete:
