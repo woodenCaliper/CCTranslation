@@ -317,77 +317,103 @@ class PopupWindow:
         main_frame = tk.Frame(self.window, bg="#f8f9fa")
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        # ヘッダー
-        header_frame = tk.Frame(main_frame, bg="#f8f9fa")
-        header_frame.pack(fill=tk.X, pady=(0, 15))
-
-        title_label = tk.Label(
-            header_frame,
-            text="翻訳完了",
-            font=self.title_font,
-            bg="#f8f9fa",
-            fg="#28a745"
-        )
-        title_label.pack(side=tk.LEFT)
-
-        close_button = tk.Button(
-            header_frame,
-            text="×",
-            font=("Arial", 14, "bold"),
-            command=self.hide_popup,
-            bg="#f8f9fa",
-            fg="#666666",
-            relief=tk.FLAT,
-            width=2,
-            height=1
-        )
-        close_button.pack(side=tk.RIGHT)
 
         # 分割パネル（PanedWindow）を作成
-        paned_window = ttk.PanedWindow(main_frame, orient='vertical')
-        paned_window.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        paned_window = ttk.PanedWindow(main_frame, orient='vertical', height=400)
+        paned_window.pack(fill=tk.X, pady=(0, 10))
 
-        # 翻訳元テキスト
-        source_frame = tk.LabelFrame(
-            paned_window,
-            text=f"原文 ({result.source_language})",
+        # 翻訳元テキスト（展開/縮小可能）
+        source_frame = tk.Frame(paned_window, bg="#f8f9fa", relief=tk.FLAT)
+
+        # 原文ヘッダー（クリック可能）
+        source_header = tk.Frame(source_frame, bg="#f8f9fa", height=35, relief=tk.FLAT)
+        source_header.pack(fill=tk.X, padx=10, pady=(8, 0))
+        source_header.pack_propagate(False)
+
+        # 展開/縮小状態を管理
+        source_expanded = tk.BooleanVar(value=True)  # デフォルトは展開状態
+
+        # ヘッダーラベル（クリック可能）
+        source_label = tk.Label(
+            source_header,
+            text=f"▼ 原文 ({result.source_language})",
             font=self.default_font,
             bg="#f8f9fa",
-            fg="#666666"
+            fg="#666666",
+            cursor="hand2",
+            anchor="w"
         )
+        source_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # クリックイベントをバインド
+        def toggle_source_expansion():
+            if source_expanded.get():
+                # 縮小状態に切り替え
+                source_expanded.set(False)
+                source_label.config(text=f"▶ 原文 ({result.source_language})")
+                source_text_frame.pack_forget()  # テキストボックス部分全体を非表示
+                # 最小高さを設定
+                source_frame.configure(height=45)
+            else:
+                # 展開状態に切り替え
+                source_expanded.set(True)
+                source_label.config(text=f"▼ 原文 ({result.source_language})")
+                source_text_frame.pack(fill=tk.BOTH, padx=10, pady=(0, 8))  # テキストボックス部分を表示
+                # 高さ制限を解除
+                source_frame.configure(height=400)
+
+        source_label.bind("<Button-1>", lambda e: toggle_source_expansion())
+        source_header.bind("<Button-1>", lambda e: toggle_source_expansion())
+
+        # 原文テキストエリア（境界線付き）
+        source_text_frame = tk.Frame(source_frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
+        source_text_frame.pack(fill=tk.BOTH, padx=10, pady=(0, 8), expand=True)
 
         source_text = scrolledtext.ScrolledText(
-            source_frame,
+            source_text_frame,
             wrap=tk.WORD,
             font=self.source_font,
             bg="#ffffff",
             fg="#333333",
             relief=tk.FLAT,
-            borderwidth=1
+            borderwidth=0
         )
-        source_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        source_text.pack(fill=tk.BOTH, padx=5, pady=5)
         source_text.insert("1.0", result.source_text)
         source_text.config(state=tk.DISABLED)
 
         # 翻訳結果
-        result_frame = tk.LabelFrame(
-            paned_window,
+        result_frame = tk.Frame(paned_window, bg="#f8f9fa", relief=tk.FLAT)
+
+        # 翻訳結果ヘッダー
+        result_header = tk.Frame(result_frame, bg="#f8f9fa", height=35, relief=tk.FLAT)
+        result_header.pack(fill=tk.X, padx=10, pady=(8, 0))
+        result_header.pack_propagate(False)
+
+        result_label = tk.Label(
+            result_header,
             text=f"翻訳結果 ({result.target_language})",
             font=self.default_font,
             bg="#f8f9fa",
-            fg="#666666"
+            fg="#666666",
+            anchor="w"
         )
+        result_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # 翻訳結果テキストエリア（境界線付き）
+        result_text_frame = tk.Frame(result_frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
+        result_text_frame.pack(fill=tk.BOTH, padx=10, pady=(0, 8), expand=True)
 
         result_text = scrolledtext.ScrolledText(
-            result_frame,
+            result_text_frame,
             wrap=tk.WORD,
             font=self.result_font,
             bg="#ffffff",
             fg="#333333",
             relief=tk.FLAT,
-            borderwidth=1
+            borderwidth=0
         )
-        result_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        result_text.pack(fill=tk.BOTH, padx=5, pady=5)
         result_text.insert("1.0", result.translated_text)
 
         # 翻訳結果テキストエリアを編集不可にする（選択とコピーは可能）
