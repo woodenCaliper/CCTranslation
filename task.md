@@ -91,7 +91,7 @@ CCTranslation/
 
 **作業内容**:
 - HotkeyManagerクラス実装
-- pyWinhookを使用したキーボード監視
+- pynputを使用したキーボード監視
 - **重要**: 日本語キーボード特殊キーの除外処理
 - Ctrl+C連続押下検出
 - ダブルコピー検出ロジック

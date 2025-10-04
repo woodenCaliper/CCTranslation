@@ -305,6 +305,11 @@ Windows 常駐型翻訳アプリケーション
         """ポップアップウィンドウを設定"""
         self.popup_window = popup_window
 
+    def set_callbacks(self, on_show_main_window=None, on_exit_app=None):
+        """コールバック関数の設定"""
+        self._on_show_main_window = on_show_main_window
+        self._on_exit_app = on_exit_app
+
     def get_status(self) -> Dict[str, Any]:
         """現在の状態を取得"""
         return {
@@ -353,6 +358,13 @@ class SystemTrayApp:
         except Exception as e:
             print(f"UIコンポーネント初期化エラー: {e}")
 
+    def set_callbacks(self, on_show_main_window=None, on_exit_app=None):
+        """コールバック関数の設定"""
+        self.system_tray.set_callbacks(
+            on_show_main_window=on_show_main_window,
+            on_exit_app=on_exit_app
+        )
+
     def start_application(self):
         """アプリケーションを開始"""
         try:
@@ -389,25 +401,32 @@ class SystemTrayApp:
     def show_main_window(self):
         """メインウィンドウを表示"""
         try:
-            if not self.main_window:
-                self.main_window = MainWindow(self.config_manager, self.language_manager)
-                self.system_tray.set_main_window(self.main_window)
+            # 既存のメインウィンドウインスタンスがある場合はそれを使用
+            if hasattr(self, '_external_main_window') and self._external_main_window:
+                self._external_main_window.show()
+                print("既存のメインウィンドウを表示しました")
+            else:
+                # 新しく作成
+                if not self.main_window:
+                    self.main_window = MainWindow(self.config_manager, self.language_manager)
+                    self.system_tray.set_main_window(self.main_window)
 
-            self.main_window.show()
-            self.system_tray.is_main_window_visible = True
-
-            print("メインウィンドウを表示しました")
+                self.main_window.show()
+                self.system_tray.is_main_window_visible = True
+                print("新しいメインウィンドウを表示しました")
 
         except Exception as e:
             print(f"メインウィンドウ表示エラー: {e}")
+
+    def set_main_window_instance(self, main_window):
+        """外部からメインウィンドウインスタンスを設定"""
+        self._external_main_window = main_window
+        print("外部メインウィンドウインスタンスを設定しました")
 
     def exit_application(self):
         """アプリケーションを終了"""
         try:
             print("アプリケーション終了処理を開始します")
-
-            # システムトレイを停止
-            self.system_tray.stop_system_tray()
 
             # UIコンポーネントをクリーンアップ
             if self.popup_window:
@@ -415,6 +434,10 @@ class SystemTrayApp:
 
             if self.main_window:
                 self.main_window.root.quit()
+                self.main_window.root.destroy()
+
+            # システムトレイを停止
+            self.system_tray.stop_system_tray()
 
             self.is_running = False
             print("アプリケーション終了完了")

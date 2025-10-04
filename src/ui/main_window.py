@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.translation_manager import TranslationManager, TranslationStatus, TranslationResult
 from core.clipboard_manager import ClipboardManager, ClipboardContent
 from data.language import LanguageManager
+from .components.split_pane import SplitPane
 
 
 @dataclass
@@ -60,6 +61,9 @@ class MainWindow:
         self.current_theme = "light"
         self.is_resizing = False
         self.translation_in_progress = False
+
+        # 分割パネル
+        self.split_pane: Optional[SplitPane] = None
 
         # ウィンドウ作成
         self.root = tk.Tk()
@@ -182,9 +186,14 @@ class MainWindow:
         self.update_language_lists()
 
     def create_text_frame(self):
-        """テキストエリアフレームの作成"""
+        """テキストエリアフレームの作成（分割パネル使用）"""
         self.text_frame = ttk.Frame(self.main_frame)
         self.text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        # 分割パネルを作成
+        self.split_pane = SplitPane(self.text_frame, orientation='vertical')
+        self.split_pane.pack(fill=tk.BOTH, expand=True)
+        print(f"[DEBUG] 分割パネル作成完了: {self.split_pane}")
 
         # 翻訳元テキストエリア
         self.create_source_text_area()
@@ -194,8 +203,8 @@ class MainWindow:
 
     def create_source_text_area(self):
         """翻訳元テキストエリアの作成"""
-        source_frame = ttk.LabelFrame(self.text_frame, text="翻訳元テキスト")
-        source_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        # フレームを作成（親はSplitPaneのpaned_window）
+        source_frame = ttk.LabelFrame(self.split_pane.paned_window, text="翻訳元テキスト")
 
         self.source_text = scrolledtext.ScrolledText(
             source_frame,
@@ -206,10 +215,14 @@ class MainWindow:
         )
         self.source_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        # 分割パネルに追加
+        if self.split_pane:
+            self.split_pane.add_pane(source_frame, weight=1, min_size=100)
+
     def create_target_text_area(self):
         """翻訳先テキストエリアの作成"""
-        target_frame = ttk.LabelFrame(self.text_frame, text="翻訳結果")
-        target_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
+        # フレームを作成（親はSplitPaneのpaned_window）
+        target_frame = ttk.LabelFrame(self.split_pane.paned_window, text="翻訳結果")
 
         self.target_text = scrolledtext.ScrolledText(
             target_frame,
@@ -220,6 +233,37 @@ class MainWindow:
             state=tk.DISABLED
         )
         self.target_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # 分割パネルに追加
+        if self.split_pane:
+            self.split_pane.add_pane(target_frame, weight=1, min_size=100)
+
+            # 分割バーのドラッグイベントをバインド
+            self.split_pane.bind_sash_motion(self.on_sash_motion)
+            print("[DEBUG] 分割バーイベントバインド完了")
+
+            # ウィンドウ表示後に分割バーの初期位置を設定（より長い待機時間）
+            self.root.after(500, self._setup_split_pane_after_display)
+
+    def _setup_split_pane_after_display(self):
+        """ウィンドウ表示後の分割バーセットアップ"""
+        try:
+            # ウィンドウが完全に表示されるまで待機
+            self.root.update_idletasks()
+
+            # 分割バーの初期位置を設定（ウィンドウの中央）
+            self.split_pane.set_initial_sash_position()
+
+            # 分割バーの詳細情報を確認
+            self.split_pane.debug_sash_info()
+
+            print("[DEBUG] 分割バーセットアップ完了")
+        except Exception as e:
+            print(f"[DEBUG] 分割バーセットアップエラー: {e}")
+
+    def on_sash_motion(self, sash_index: int, position: int):
+        """分割バードラッグ時のコールバック"""
+        print(f"[DEBUG] 分割バードラッグ: sash_index={sash_index}, position={position}")
 
     def create_button_frame(self):
         """ボタンフレームの作成"""

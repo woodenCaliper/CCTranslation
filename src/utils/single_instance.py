@@ -9,6 +9,7 @@ import sys
 import tempfile
 import atexit
 import psutil
+import time
 from typing import Optional
 import logging
 
@@ -25,8 +26,9 @@ class SingleInstanceManager:
         """
         self.app_name = app_name
         self.lock_file_path = os.path.join(tempfile.gettempdir(), f"{app_name}.lock")
-        self.lock_file: Optional[file] = None
+        self.lock_file: Optional[object] = None
         self.logger = logging.getLogger(__name__)
+        self.timeout_seconds = 10  # ロックファイルのタイムアウト時間（秒）
 
     def is_already_running(self) -> bool:
         """
@@ -39,36 +41,79 @@ class SingleInstanceManager:
             # ロックファイルの存在チェック
             if os.path.exists(self.lock_file_path):
                 try:
+                    # ロックファイルの作成時間をチェック
+                    lock_file_age = time.time() - os.path.getctime(self.lock_file_path)
+                    if lock_file_age > self.timeout_seconds:
+                        # タイムアウト時間を過ぎている場合は古いロックファイルとみなす
+                        self.logger.info(f"古いロックファイルを検出（{lock_file_age:.1f}秒経過）。削除します。")
+                        self._cleanup_old_lock_file()
+                        return False
+
                     # プロセスIDを読み取り
                     with open(self.lock_file_path, 'r') as f:
                         pid_str = f.read().strip()
-                        
+
                     try:
                         pid = int(pid_str)
                         # プロセスが実際に存在するかチェック
                         if psutil.pid_exists(pid):
                             try:
                                 process = psutil.Process(pid)
-                                # プロセス名が一致するかチェック
-                                if self.app_name.lower() in process.name().lower():
-                                    self.logger.warning(f"アプリケーションは既に実行中です (PID: {pid})")
-                                    return True
+                                # Pythonプロセスで、かつコマンドラインにアプリ名が含まれているかチェック
+                                if process.name().lower() == 'python.exe':
+                                    cmdline = ' '.join(process.cmdline())
+                                    if self.app_name.lower() in cmdline.lower():
+                                        self.logger.warning(f"アプリケーションは既に実行中です (PID: {pid})")
+                                        return True
+
+                                # プロセス名が一致しない場合は古いロックファイルとみなす
+                                self.logger.info(f"PID {pid}のプロセス名が一致しません（{process.name()}）。古いロックファイルを削除します。")
+                                self._cleanup_old_lock_file()
+                                return False
+
                             except (psutil.NoSuchProcess, psutil.AccessDenied):
                                 # プロセスが存在しないかアクセスできない場合は古いロックファイル
-                                pass
-                        
-                        # 古いロックファイルを削除
-                        os.remove(self.lock_file_path)
-                        self.logger.info("古いロックファイルを削除しました")
-                        
+                                self.logger.info(f"PID {pid}のプロセスにアクセスできません。古いロックファイルを削除します。")
+                                self._cleanup_old_lock_file()
+                                return False
+                        else:
+                            # プロセスが存在しない場合は古いロックファイル
+                            self.logger.info(f"PID {pid}のプロセスが存在しません。古いロックファイルを削除します。")
+                            self._cleanup_old_lock_file()
+                            return False
+
                     except ValueError:
                         # PIDが無効な場合は古いロックファイル
-                        os.remove(self.lock_file_path)
                         self.logger.info("無効なロックファイルを削除しました")
-                        
+                        self._cleanup_old_lock_file()
+                        return False
+
                 except PermissionError:
                     # ロックファイルが他のプロセスによって使用されている場合
+                    # これは既存のインスタンスが実行中であることを示す
                     self.logger.warning(f"ロックファイルが他のプロセスによって使用されています: {self.lock_file_path}")
+
+                    # ロックファイルの内容を確認してみる
+                    try:
+                        with open(self.lock_file_path, 'r') as f:
+                            pid_str = f.read().strip()
+                        try:
+                            pid = int(pid_str)
+                            if psutil.pid_exists(pid):
+                                # プロセスが存在する場合は実行中とみなす
+                                try:
+                                    process = psutil.Process(pid)
+                                    if process.name().lower() == 'python.exe':
+                                        cmdline = ' '.join(process.cmdline())
+                                        if self.app_name.lower() in cmdline.lower():
+                                            return True
+                                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                    pass
+                        except ValueError:
+                            pass
+                    except Exception:
+                        pass
+
                     return True
                 except Exception as e:
                     self.logger.error(f"ロックファイル読み取りエラー: {e}")
@@ -79,6 +124,26 @@ class SingleInstanceManager:
         except Exception as e:
             self.logger.error(f"既存インスタンスチェックエラー: {e}")
             return False
+
+    def _cleanup_old_lock_file(self):
+        """古いロックファイルを削除"""
+        try:
+            if os.path.exists(self.lock_file_path):
+                # ファイルが使用中でないかチェック
+                try:
+                    with open(self.lock_file_path, 'r') as f:
+                        f.read()
+                    # ファイルが読み取れる場合は削除
+                    os.remove(self.lock_file_path)
+                    self.logger.info(f"古いロックファイルを削除: {self.lock_file_path}")
+                except PermissionError:
+                    # ファイルが使用中の場合は無視（別のプロセスが使用中）
+                    self.logger.warning(f"ロックファイルが使用中のため削除をスキップ: {self.lock_file_path}")
+                    return False
+        except Exception as e:
+            self.logger.error(f"古いロックファイル削除エラー: {e}")
+            return False
+        return True
 
     def acquire_lock(self) -> bool:
         """
@@ -92,16 +157,26 @@ class SingleInstanceManager:
             if self.is_already_running():
                 return False
 
+            # 古いロックファイルをクリーンアップ
+            if not self._cleanup_old_lock_file():
+                # クリーンアップに失敗した場合は既存インスタンスが実行中とみなす
+                return False
+
             # ロックファイルを作成
-            self.lock_file = open(self.lock_file_path, 'w')
-            self.lock_file.write(str(os.getpid()))
-            self.lock_file.flush()
+            try:
+                self.lock_file = open(self.lock_file_path, 'w')
+                self.lock_file.write(str(os.getpid()))
+                self.lock_file.flush()
 
-            # 終了時のクリーンアップを登録
-            atexit.register(self.release_lock)
+                # 終了時のクリーンアップを登録
+                atexit.register(self.release_lock)
 
-            self.logger.info(f"単一インスタンスロックを取得しました (PID: {os.getpid()})")
-            return True
+                self.logger.info(f"単一インスタンスロックを取得しました (PID: {os.getpid()})")
+                return True
+            except PermissionError:
+                # ロックファイルの作成に失敗した場合は既存インスタンスが実行中とみなす
+                self.logger.warning(f"ロックファイルの作成に失敗しました: {self.lock_file_path}")
+                return False
 
         except Exception as e:
             self.logger.error(f"ロック取得エラー: {e}")

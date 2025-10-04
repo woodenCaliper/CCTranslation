@@ -343,15 +343,18 @@ class PopupWindow:
         )
         close_button.pack(side=tk.RIGHT)
 
+        # 分割パネル（PanedWindow）を作成
+        paned_window = ttk.PanedWindow(main_frame, orient='vertical')
+        paned_window.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
         # 翻訳元テキスト
         source_frame = tk.LabelFrame(
-            main_frame,
+            paned_window,
             text=f"原文 ({result.source_language})",
             font=self.default_font,
             bg="#f8f9fa",
             fg="#666666"
         )
-        source_frame.pack(fill=tk.X, pady=(0, 10))
 
         source_text = scrolledtext.ScrolledText(
             source_frame,
@@ -369,13 +372,12 @@ class PopupWindow:
 
         # 翻訳結果
         result_frame = tk.LabelFrame(
-            main_frame,
+            paned_window,
             text=f"翻訳結果 ({result.target_language})",
             font=self.default_font,
             bg="#f8f9fa",
             fg="#666666"
         )
-        result_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         result_text = scrolledtext.ScrolledText(
             result_frame,
@@ -389,6 +391,13 @@ class PopupWindow:
         )
         result_text.pack(fill=tk.BOTH, padx=5, pady=5)
         result_text.insert("1.0", result.translated_text)
+
+        # PanedWindowにパネルを追加
+        paned_window.add(source_frame, weight=1)
+        paned_window.add(result_frame, weight=1)
+
+        # 分割バーの初期位置を設定（中央）
+        paned_window.after(100, lambda: self._set_paned_window_sash_position(paned_window))
 
         # ボタンフレーム
         button_frame = tk.Frame(main_frame, bg="#f8f9fa")
@@ -421,6 +430,24 @@ class PopupWindow:
             pady=5
         )
         close_button.pack(side=tk.RIGHT)
+
+    def _set_paned_window_sash_position(self, paned_window):
+        """PanedWindowの分割バーの初期位置を設定"""
+        try:
+            # ウィンドウが完全に表示されるまで待機
+            paned_window.update_idletasks()
+
+            # 高さを取得して中央に設定
+            height = paned_window.winfo_height()
+            if height > 1:
+                initial_pos = height // 2
+                paned_window.sashpos(0, initial_pos)
+                print(f"[DEBUG] ポップアップ分割バー位置設定: {initial_pos}")
+            else:
+                # サイズが取得できない場合は少し待って再試行
+                paned_window.after(100, lambda: self._set_paned_window_sash_position(paned_window))
+        except Exception as e:
+            print(f"[DEBUG] ポップアップ分割バー位置設定エラー: {e}")
 
     def _setup_error_display(self, error_message: str):
         """エラー表示の設定"""

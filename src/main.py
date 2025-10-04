@@ -199,6 +199,13 @@ class CCTranslationApp:
             self.system_tray.popup_window = self.popup_window
             if self.main_window:
                 self.system_tray.main_window = self.main_window
+                # システムトレイに既存のメインウィンドウインスタンスを設定
+                self.system_tray.set_main_window_instance(self.main_window)
+
+            # メインウィンドウ表示コールバックを設定
+            self.system_tray.set_callbacks(
+                on_show_main_window=self.show_main_window
+            )
 
             self.logger.info("システムトレイ初期化完了")
         except Exception as e:
@@ -304,6 +311,12 @@ class CCTranslationApp:
             if self.popup_window:
                 self.popup_window.hide_popup()
 
+            # メインウィンドウの完全終了
+            if self.main_window:
+                self.main_window.root.quit()
+                self.main_window.root.destroy()
+                self.logger.info("メインウィンドウ終了")
+
             # システムトレイ停止
             if self.system_tray:
                 self.system_tray.exit_application()
@@ -319,8 +332,15 @@ class CCTranslationApp:
             self.is_running = False
             self.logger.info("アプリケーション停止完了")
 
+            # プロセスを強制終了
+            import os
+            os._exit(0)
+
         except Exception as e:
             self.logger.error(f"アプリケーション停止エラー: {e}")
+            # エラーが発生した場合も強制終了
+            import os
+            os._exit(1)
 
     def _save_settings(self):
         """設定の保存"""
