@@ -392,6 +392,9 @@ class PopupWindow:
         result_text.pack(fill=tk.BOTH, padx=5, pady=5)
         result_text.insert("1.0", result.translated_text)
 
+        # 翻訳結果テキストエリアを編集不可にする（選択とコピーは可能）
+        result_text.config(state=tk.DISABLED)
+
         # PanedWindowにパネルを追加
         paned_window.add(source_frame, weight=1)
         paned_window.add(result_frame, weight=1)
