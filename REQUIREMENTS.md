@@ -178,58 +178,148 @@ Windows デスクトップアプリケーション（常駐型）
 └───────────────────────────────────────────┘
 ```
 
-**CSSフレーム構造（展開状態）**:
+**CSSフレーム構造（翻訳結果表示 - 展開状態）**:
 ```
-window (Toplevel)
-├── paned_window (tk.PanedWindow, orient='vertical')
-│   ├── source_frame (tk.Frame, bg="green", pack_propagate=False)
-│   │   ├── source_header (tk.Frame, bg="#f8f9fa", height=35, pack_propagate=False)
-│   │   │   └── source_label (tk.Label, text="▼ 原文 (en)", cursor="hand2", anchor="w")
-│   │   └── source_text_frame (tk.Frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
-│   │       └── source_text (scrolledtext.ScrolledText, state=tk.DISABLED, relief=tk.FLAT, borderwidth=0)
-│   └── result_frame (tk.Frame, bg="yellow", relief=tk.FLAT)
-│       ├── result_header (tk.Frame, bg="#f8f9fa", height=35, pack_propagate=False)
-│       │   └── result_label (tk.Label, text="翻訳結果 (ja)", anchor="w")
-│       └── result_text_frame (tk.Frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
-│           └── result_text (scrolledtext.ScrolledText, state=tk.DISABLED, relief=tk.FLAT, borderwidth=0)
-└── button_frame (tk.Frame, bg="red", height=60, pack_propagate=False)
-    └── copy_button (tk.Button, bg="orange", relief=tk.SOLID, borderwidth=2, highlightcolor="green")
+window (Toplevel, bg="blue")
+├── button_frame (tk.Frame, bg="red", pack_propagate=False)
+│   └── copy_button (tk.Button, bg="orange", relief=tk.SOLID, borderwidth=2, highlightcolor="green")
+├── source_frame (tk.Frame, bg="green", pack_propagate=False)
+│   ├── source_header (tk.Frame, bg="#f8f9fa", height=35, pack_propagate=False)
+│   │   └── source_label (tk.Label, text="▼ 原文 (en)", cursor="hand2", anchor="w")
+│   └── source_text_frame (tk.Frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
+│       └── source_text (scrolledtext.ScrolledText, state=tk.DISABLED, relief=tk.FLAT, borderwidth=0)
+└── result_frame (tk.Frame, bg="yellow", pack_propagate=False)
+    ├── result_header (tk.Frame, bg="#f8f9fa", height=35, pack_propagate=False)
+    │   └── result_label (tk.Label, text="翻訳結果 (ja)", anchor="w")
+    └── result_text_frame (tk.Frame, bg="#ffffff", relief=tk.SUNKEN, bd=1)
+        └── result_text (scrolledtext.ScrolledText, state=tk.DISABLED, relief=tk.FLAT, borderwidth=0)
 ```
 
-**フレーム詳細仕様**:
-- **paned_window**: 
-  - sashwidth=0, sashrelief=tk.FLAT (分割バードラッグ無効)
-  - 高さ: window_height - 120px (動的計算)
-  - 分割バー位置: 中央 (height // 2)
+**CSSフレーム構造（翻訳中表示）**:
+```
+window (Toplevel, bg="blue")
+└── main_frame (tk.Frame, bg="#f8f9fa")
+    ├── icon_label (tk.Label, text="🔄", font=title_font, bg="#f8f9fa", fg="#007bff")
+    ├── status_label (tk.Label, text="翻訳中...", font=title_font, bg="#f8f9fa", fg="#333333")
+    ├── progress_frame (tk.Frame, bg="#f8f9fa")
+    │   └── progress_bar (ttk.Progressbar, mode='indeterminate')
+    └── cancel_button (tk.Button, text="キャンセル", bg="#dc3545", fg="white", relief=tk.FLAT)
+```
+
+**CSSフレーム構造（エラー表示）**:
+```
+window (Toplevel, bg="blue")
+└── main_frame (tk.Frame, bg="#f8f9fa")
+    ├── icon_label (tk.Label, text="❌", font=title_font, bg="#f8f9fa", fg="#dc3545")
+    ├── title_label (tk.Label, text="翻訳エラー", font=title_font, bg="#f8f9fa", fg="#dc3545")
+    ├── error_text (scrolledtext.ScrolledText, state=tk.DISABLED, bg="#ffffff", fg="#dc3545", relief=tk.FLAT, borderwidth=1)
+    └── button_frame (tk.Frame, bg="#f8f9fa")
+```
+
+**フレーム詳細仕様（翻訳結果表示）**:
+- **button_frame**: 
+  - 背景色: 赤色 (デバッグ用)
+  - pack_propagate=False (高さ制御)
+  - 配置: side=tk.BOTTOM (最下部固定)
+  - 高さ: 動的計算 (button_height + 6px)
 - **source_frame**: 
   - 背景色: 緑色 (デバッグ用)
   - pack_propagate=False (高さ制御)
-  - 最小高さ: 80px (展開時)
+  - 配置: fill=tk.X, padx=20, pady=(5, 0)
+  - 高さ: 展開時=利用可能高さ÷2, 縮小時=35px
 - **source_header**: 
   - 背景色: #f8f9fa
   - 固定高さ: 35px
+  - pack_propagate=False
 - **source_text_frame**: 
   - 背景色: #ffffff
   - relief=tk.SUNKEN, bd=1 (境界線)
+  - 縮小時は非表示
 - **result_frame**: 
   - 背景色: 黄色 (デバッグ用)
-  - 最小高さ: 40px (1行分)
+  - pack_propagate=False (高さ制御)
+  - 配置: fill=tk.X, padx=20, pady=(0, 0)
+  - 高さ: 展開時=利用可能高さ÷2, 縮小時=利用可能高さ-35px
 - **result_header**: 
   - 背景色: #f8f9fa
   - 固定高さ: 35px
+  - pack_propagate=False
 - **result_text_frame**: 
   - 背景色: #ffffff
   - relief=tk.SUNKEN, bd=1 (境界線)
-- **button_frame**: 
-  - 背景色: 赤色 (デバッグ用)
-  - 固定高さ: 60px
-  - pack_propagate=False
+- **利用可能高さの計算**:
+  - 計算式: window_height - button_frame_height - 60px (パディング・余白)
+  - 最小値: 100px
+- **高さ均等化**:
+  - 展開時: source_frame = result_frame = 利用可能高さ ÷ 2
+  - 縮小時: source_frame = 35px, result_frame = 利用可能高さ - 35px
 - **コピーボタン仕様**:
   - 背景色: オレンジ
   - relief=tk.SOLID, borderwidth=2
   - highlightcolor="green", highlightthickness=2
-  - padx=5, pady=3
-  - 配置: ウィンドウ左右中央
+  - padx=2, pady=1 (最小サイズ)
+  - 配置: ウィンドウ左右中央 (expand=True)
+
+**フレーム詳細仕様（翻訳中表示）**:
+- **main_frame**: 
+  - 背景色: #f8f9fa
+  - 配置: fill=tk.BOTH, expand=True, padx=20, pady=20
+- **icon_label**: 
+  - テキスト: "🔄"
+  - フォント: title_font
+  - 背景色: #f8f9fa
+  - 文字色: #007bff (青)
+- **status_label**: 
+  - テキスト: "翻訳中..."
+  - フォント: title_font
+  - 背景色: #f8f9fa
+  - 文字色: #333333
+- **progress_frame**: 
+  - 背景色: #f8f9fa
+  - 配置: fill=tk.X, pady=(0, 10)
+- **progress_bar**: 
+  - ウィジェット: ttk.Progressbar
+  - モード: indeterminate
+  - 長さ: window_width - 80px
+- **cancel_button**: 
+  - テキスト: "キャンセル"
+  - 背景色: #dc3545 (赤)
+  - 文字色: white
+  - relief: tk.FLAT
+  - パディング: padx=20, pady=10
+
+**フレーム詳細仕様（エラー表示）**:
+- **main_frame**: 
+  - 背景色: #f8f9fa
+  - 配置: fill=tk.BOTH, expand=True, padx=20, pady=20
+- **icon_label**: 
+  - テキスト: "❌"
+  - フォント: title_font
+  - 背景色: #f8f9fa
+  - 文字色: #dc3545 (赤)
+- **title_label**: 
+  - テキスト: "翻訳エラー"
+  - フォント: title_font
+  - 背景色: #f8f9fa
+  - 文字色: #dc3545 (赤)
+- **error_text**: 
+  - ウィジェット: scrolledtext.ScrolledText
+  - 高さ: 8行
+  - wrap: tk.WORD
+  - フォント: default_font
+  - 背景色: #ffffff
+  - 文字色: #dc3545 (赤)
+  - 状態: tk.DISABLED
+  - 境界線: relief=tk.FLAT, borderwidth=1
+- **button_frame**: 
+  - 背景色: #f8f9fa
+  - 配置: fill=tk.X
+
+**状態管理**:
+- **source_expanded**: 
+  - ウィジェット: tk.BooleanVar
+  - デフォルト値: True (展開状態)
+  - 用途: 原文エリアの展開/縮小状態管理
 
 **原文エリア縮小状態**:
 ```
