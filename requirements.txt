@@ -1,0 +1,34 @@
+# CCTranslation Dependencies
+# Windows translation utility dependencies
+
+# Translation processing
+googletrans==4.0.0rc1
+
+# Clipboard operations
+pyperclip==1.8.2
+
+# Hotkey monitoring (Cross-platform, Japanese keyboard support)
+pynput==1.8.1
+
+# Windows API access
+pywin32==306
+
+# System tray
+pystray==0.19.4
+
+# HTTP communication
+requests==2.31.0
+
+# Image processing (for system tray icons)
+Pillow==10.0.1
+
+# Process management (for single instance check)
+psutil==5.9.5
+
+# Config file management (standard library, no need to specify)
+# configparser - Python standard library
+
+# GUI (standard library, no need to specify)
+# tkinter - Python standard library
+
+# Development and test dependencies are in requirements-dev.txt
